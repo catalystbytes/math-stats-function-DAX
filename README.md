@@ -29,7 +29,7 @@ For full schema details, see your data model.
 
 ---
 
-## 🧩 Example 1: Basic Aggregations – One-Page DAX
+## Example 1:  One DAX Measure to Show All Basic Aggregations
 
 This DAX code creates a calculated table displaying essential metrics using common aggregation functions. Paste this into **Modeling > New Table** in Power BI to use in a Matrix or Table visual.
 
@@ -81,3 +81,78 @@ UNION(
         "Value", DISTINCTCOUNT('sales_fact'[customer_id])
     )
 )
+``` 
+
+## Example 2: Iterator-Based Sales Summary Table
+
+```dax
+Iterator Sales Summary = 
+UNION(
+    SELECTCOLUMNS(
+        {"Total Revenue Per Product"},
+        "Metric", "Total Revenue Per Product",
+        "Value", 
+        SUMX(
+            VALUES('product_dim'[product_id]),
+            CALCULATE(SUM('sales_fact'[total_amount]))
+        )
+    ),
+    SELECTCOLUMNS(
+        {"Average Revenue Per Store"},
+        "Metric", "Average Revenue Per Store",
+        "Value", 
+        AVERAGEX(
+            VALUES('store_dim'[store_id]),
+            CALCULATE(SUM('sales_fact'[total_amount]))
+        )
+    ),
+    SELECTCOLUMNS(
+        {"Max Units Sold Per Customer"},
+        "Metric", "Max Units Sold Per Customer",
+        "Value", 
+        MAXX(
+            VALUES('customer_dim'[customer_id]),
+            CALCULATE(SUM('sales_fact'[units_sold]))
+        )
+    ),
+    SELECTCOLUMNS(
+        {"Min Revenue Per Customer Type"},
+        "Metric", "Min Revenue Per Customer Type",
+        "Value", 
+        MINX(
+            VALUES('customer_dim'[customer_type]),
+            CALCULATE(SUM('sales_fact'[total_amount]))
+        )
+    )
+)
+
+```
+
+## Example 2: Ranking and Counting Summary Table
+
+```dax
+Rank and Count Summary = 
+UNION(
+    SELECTCOLUMNS(
+        {"Sales Rank by Revenue"},
+        "Metric", "Top Salesperson Rank",
+        "Value", 
+        RANKX(
+            ALL('salesperson_dim'[salesperson_id]),
+            CALCULATE(SUM('sales_fact'[total_amount])),
+            ,
+            DESC
+        )
+    ),
+    SELECTCOLUMNS(
+        {"Sales Count Per Region"},
+        "Metric", "Sales Count Per Region (Total)",
+        "Value", 
+        COUNTX(
+            VALUES('customer_dim'[region]),
+            CALCULATE(DISTINCTCOUNT('sales_fact'[sale_id]))
+        )
+    )
+)
+
+```
